@@ -9,3 +9,11 @@ bash scripts/bootstrap.sh
 
 # Run ansible playbook
 ```ansible-playbook rabbitmq.yaml -i inventory --vault-password-file .vault_pass```
+
+# RabbitMQ pub/sub scripts
+```
+cd scripts
+python3 send.py
+python3 receive.py
+
+```
