@@ -1,0 +1,17 @@
+---
+- name: Setup for docker env
+  ansible.builtin.shell: echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections
+
+- name: Setup rabbitmq-server sources
+  ansible.builtin.shell:
+    warn: false
+    cmd: curl -1sLf \
+      'https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/setup.deb.sh' \
+      | bash
+
+- name: Setup rabbitmq-erlang sources
+  ansible.builtin.shell:
+    warn: false
+    cmd: curl -1sLf \
+      'https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/setup.deb.sh' \
+      | bash

@@ -1,0 +1,13 @@
+---
+- name: Allow all access to rabbit admin port 15672
+  community.general.ufw:
+    rule: allow
+    port: '15672'
+    proto: tcp
+
+- name: Allow rabbitmq port 5672 from localhost
+  community.general.ufw:
+    rule: allow
+    port: '5672'
+    src: 127.0.0.1
+    dest: 127.0.0.1

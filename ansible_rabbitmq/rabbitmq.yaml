@@ -1,0 +1,88 @@
+---
+- hosts: rabbitmq
+  become: true
+  become_method: sudo
+
+  vars_files:
+    - vars/local.vault.yaml
+
+  tasks:
+
+    - name: Include setup-sources.yaml
+      include_tasks: tasks/setup-sources.yaml
+
+    - name: Update all packages
+      apt:
+        name: "*"
+        state: latest
+        update_cache: yes
+        force_apt_get: true
+
+    - name: Verify apt-utils is installed
+      apt: pkg=apt-utils state=present
+
+    - name: Verify Python is installed
+      apt: pkg=software-properties-common state=present
+
+    - name: Install RabbitMQ package
+      apt: pkg=rabbitmq-server state=present
+
+    - name: Run tasks/setup-openfiles-limits.yaml
+      include_tasks: tasks/setup-openfiles-limits.yaml
+
+    - name: Start rabbitmq service
+      ansible.builtin.service:
+        name: rabbitmq-server
+        state: started
+
+    - name: Enable RabbitMQ plugins
+      rabbitmq_plugin:
+        names: rabbitmq_management
+        state: enabled
+        broker_state: offline
+      notify:
+        - restart rabbitmq
+
+    - name: Add RabbitMQ Deploy user
+      rabbitmq_user:
+        user: deploy
+        password: "{{ user_password }}"
+        tags: administrator,deploy
+        vhost: /
+        configure_priv: .*
+        read_priv: .*
+        write_priv: .*
+        state: present
+      no_log: true
+
+    - name: Remove default user
+      rabbitmq_user:
+        user: guest
+        state: absent
+
+    - name: Create default vhost
+      rabbitmq_vhost:
+        name: "{{ default_vhost }}"
+        tracing: no
+        state: present
+
+    - name: Show users [ rabbitmqctl list_users ]
+      ansible.builtin.shell: rabbitmqctl list_users
+      register: result
+
+    - debug: msg="{{result.stdout}}"
+
+    - name: Show vhosts [ rabbitmqctl list_vhosts ]
+      ansible.builtin.shell: rabbitmqctl list_vhosts
+      register: result
+
+    - debug: msg="{{result.stdout}}"
+
+    - name: Run tasks/ufw-rules.yaml
+      include_tasks: tasks/ufw-rules.yaml
+
+  handlers:
+    - name: restart rabbitmq
+      ansible.builtin.service:
+        name: rabbitmq-server
+        state: restarted
